@@ -1,0 +1,369 @@
+{
+  "date": "2026-11-10",
+  "os": "27.0.1 (26A434)",
+  "branch": "fix-macos27",
+  "assertions": [
+    {
+      "test": "next Space from initial display",
+      "pass": true,
+      "target": 3,
+      "focused": [
+        3
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "previous Space from initial display",
+      "pass": true,
+      "target": 2,
+      "focused": [
+        2
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "numeric empty Space (display 1)",
+      "pass": true,
+      "target": 4,
+      "focused": [
+        4
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "multi-hop backward (display 1)",
+      "pass": true,
+      "target": 1,
+      "focused": [
+        1
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "multi-hop forward to empty Space (display 1)",
+      "pass": true,
+      "target": 12,
+      "focused": [
+        12
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "already visible Space on other display",
+      "pass": true,
+      "target": 17,
+      "focused": [
+        17
+      ],
+      "focused_displays": [
+        2
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "numeric empty Space (display 2)",
+      "pass": true,
+      "target": 13,
+      "focused": [
+        13
+      ],
+      "focused_displays": [
+        2
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "next Space (display 2)",
+      "pass": true,
+      "target": 14,
+      "focused": [
+        14
+      ],
+      "focused_displays": [
+        2
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "previous Space (display 2)",
+      "pass": true,
+      "target": 13,
+      "focused": [
+        13
+      ],
+      "focused_displays": [
+        2
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "multi-hop forward to empty Space (display 2)",
+      "pass": true,
+      "target": 22,
+      "focused": [
+        22
+      ],
+      "focused_displays": [
+        2
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "multi-hop backward (display 2)",
+      "pass": true,
+      "target": 20,
+      "focused": [
+        20
+      ],
+      "focused_displays": [
+        2
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "cross-display return to empty Space",
+      "pass": true,
+      "target": 4,
+      "focused": [
+        4
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "enable BSP on disposable Space",
+      "pass": true
+    },
+    {
+      "test": "three disposable windows tracked and tiled",
+      "pass": true
+    },
+    {
+      "test": "BSP frames fill test Space",
+      "pass": true
+    },
+    {
+      "test": "window focus by id",
+      "pass": true
+    },
+    {
+      "test": "focused window confirmed",
+      "pass": true
+    },
+    {
+      "test": "skhd directional focus east",
+      "pass": true
+    },
+    {
+      "test": "skhd directional focus west",
+      "pass": true
+    },
+    {
+      "test": "window swap changes placement",
+      "pass": true
+    },
+    {
+      "test": "window warp changes BSP",
+      "pass": true
+    },
+    {
+      "test": "BSP --rotate 270",
+      "pass": true
+    },
+    {
+      "test": "BSP --mirror y-axis",
+      "pass": true
+    },
+    {
+      "test": "BSP --mirror x-axis",
+      "pass": true
+    },
+    {
+      "test": "skhd directional --swap",
+      "pass": true
+    },
+    {
+      "test": "skhd directional --warp",
+      "pass": true
+    },
+    {
+      "test": "BSP balance",
+      "pass": true
+    },
+    {
+      "test": "skhd BSP resize changes frames",
+      "pass": true
+    },
+    {
+      "test": "balance restores altered split ratios",
+      "pass": true
+    },
+    {
+      "test": "window moved to other Space",
+      "pass": true
+    },
+    {
+      "test": "window returned and tiled",
+      "pass": true
+    },
+    {
+      "test": "prepare empty cross-display destination",
+      "pass": true,
+      "target": 20,
+      "focused": [
+        20
+      ],
+      "focused_displays": [
+        2
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "enable BSP on second disposable Space",
+      "pass": true
+    },
+    {
+      "test": "return to source for window display move",
+      "pass": true,
+      "target": 4,
+      "focused": [
+        4
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "skhd move window to display west",
+      "pass": true
+    },
+    {
+      "test": "skhd follow moved window to display west",
+      "pass": true
+    },
+    {
+      "test": "skhd move window to display east",
+      "pass": true
+    },
+    {
+      "test": "skhd follow moved window to display east",
+      "pass": true
+    },
+    {
+      "test": "skhd window --space next",
+      "pass": true
+    },
+    {
+      "test": "native window focus switches to its Space",
+      "pass": true
+    },
+    {
+      "test": "skhd window --space prev",
+      "pass": true
+    },
+    {
+      "test": "return after prev/next window moves",
+      "pass": true,
+      "target": 4,
+      "focused": [
+        4
+      ],
+      "focused_displays": [
+        1
+      ],
+      "other_display_unchanged": true,
+      "exit_status": 0
+    },
+    {
+      "test": "invalid Space rejected",
+      "pass": true,
+      "exit_status": 1,
+      "error": "could not locate space with mission-control index '99999'."
+    },
+    {
+      "test": "invalid window rejected",
+      "pass": true,
+      "exit_status": 1,
+      "error": "could not locate the window to act on!"
+    },
+    {
+      "test": "invalid selector rejected",
+      "pass": true,
+      "exit_status": 1,
+      "error": "value 'bogus-macos27' is not a valid option for SPACE_SEL"
+    },
+    {
+      "test": "same Space focus rejected",
+      "pass": true,
+      "exit_status": 1,
+      "error": "cannot focus an already focused space."
+    }
+  ],
+  "passed": 46,
+  "failed": 0,
+  "existing_windows_before": 17,
+  "existing_windows_after": 17,
+  "existing_window_state_changes": 0,
+  "visible_spaces_before": [
+    2,
+    17
+  ],
+  "visible_spaces_after": [
+    2,
+    17
+  ],
+  "focused_space_before": [
+    2
+  ],
+  "focused_space_after": [
+    2
+  ],
+  "binary_sha256": "372ad557a7c54a6199a78dcbcefe5b60fd0224e5c1f5139cfaed00dfdaa44501",
+  "binary_unchanged": true,
+  "plist_unchanged": true,
+  "sip": "System Integrity Protection status: enabled.",
+  "final_service_executable": "/opt/homebrew/bin/yabai",
+  "final_space_query_exit_status": 0,
+  "final_sip": "System Integrity Protection status: enabled.",
+  "final_binary_checksum_matches": true,
+  "final_plist_checksum_matches": true,
+  "cursor_exact_match": false,
+  "cursor_delta_points": {
+    "x": -0.14453125,
+    "y": -0.34765625
+  },
+  "cursor_restored_within_one_point": true,
+  "validation_scope": "Historical pre-review implementation; source was uncommitted and patched-binary checksum was not captured. Not a live pass for the review-hardened commit."
+}

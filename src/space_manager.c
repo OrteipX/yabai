@@ -662,17 +662,31 @@ uint64_t space_manager_active_space(void)
     return display_space_id(did);
 }
 
+static bool space_manager_move_windows_using_bridge(uint64_t sid, uint32_t *window_list, int window_count)
+{
+    Class cls = objc_getClass("SLSBridgedMoveWindowsToManagedSpaceOperation");
+    SEL sel = sel_registerName("initWithWindows:spaceID:");
+    if (!SLSPerformAsynchronousBridgedWindowManagementOperation || ![cls instancesRespondToSelector:sel]) return false;
+
+    CFArrayRef window_list_ref = cfarray_of_cfnumbers(window_list, sizeof(uint32_t), window_count, kCFNumberSInt32Type);
+    if (!window_list_ref) return false;
+    id operation = ((id (*)(id, SEL, id, uint64_t))objc_msgSend)([cls alloc], sel, (__bridge id)window_list_ref, sid);
+    if (!operation) {
+        CFRelease(window_list_ref);
+        return false;
+    }
+
+    SLSPerformAsynchronousBridgedWindowManagementOperation(operation);
+    [operation release];
+    CFRelease(window_list_ref);
+    return true;
+}
+
 void space_manager_move_window_list_to_space(uint64_t sid, uint32_t *window_list, int window_count)
 {
-    if (SLSPerformAsynchronousBridgedWindowManagementOperation) {
-        CFArrayRef window_list_ref = cfarray_of_cfnumbers(window_list, sizeof(uint32_t), window_count, kCFNumberSInt32Type);
-        Class cls = objc_getClass("SLSBridgedMoveWindowsToManagedSpaceOperation");
-        SEL sel = sel_registerName("initWithWindows:spaceID:");
-        id operation = ((id (*)(id, SEL, id, uint64_t))objc_msgSend)([cls alloc], sel, (__bridge id)window_list_ref, sid);
-        SLSPerformAsynchronousBridgedWindowManagementOperation(operation);
-        [operation release];
-        CFRelease(window_list_ref);
-    } else if (!workspace_use_macos_space_workaround()) {
+    if (space_manager_move_windows_using_bridge(sid, window_list, window_count)) return;
+
+    if (!workspace_use_macos_space_workaround()) {
         CFArrayRef window_list_ref = cfarray_of_cfnumbers(window_list, sizeof(uint32_t), window_count, kCFNumberSInt32Type);
         SLSMoveWindowsToManagedSpace(g_connection, window_list_ref, sid);
         CFRelease(window_list_ref);
@@ -685,15 +699,9 @@ void space_manager_move_window_list_to_space(uint64_t sid, uint32_t *window_list
 
 void space_manager_move_window_to_space(uint64_t sid, struct window *window)
 {
-    if (SLSPerformAsynchronousBridgedWindowManagementOperation) {
-        CFArrayRef window_list_ref = cfarray_of_cfnumbers(&window->id, sizeof(uint32_t), 1, kCFNumberSInt32Type);
-        Class cls = objc_getClass("SLSBridgedMoveWindowsToManagedSpaceOperation");
-        SEL sel = sel_registerName("initWithWindows:spaceID:");
-        id operation = ((id (*)(id, SEL, id, uint64_t))objc_msgSend)([cls alloc], sel, (__bridge id)window_list_ref, sid);
-        SLSPerformAsynchronousBridgedWindowManagementOperation(operation);
-        [operation release];
-        CFRelease(window_list_ref);
-    } else if (!workspace_use_macos_space_workaround()) {
+    if (space_manager_move_windows_using_bridge(sid, &window->id, 1)) return;
+
+    if (!workspace_use_macos_space_workaround()) {
         CFArrayRef window_list_ref = cfarray_of_cfnumbers(&window->id, sizeof(uint32_t), 1, kCFNumberSInt32Type);
         SLSMoveWindowsToManagedSpace(g_connection, window_list_ref, sid);
         CFRelease(window_list_ref);
@@ -702,6 +710,19 @@ void space_manager_move_window_to_space(uint64_t sid, struct window *window)
         SLSSetWindowListWorkspace(g_connection, &window->id, 1, 0x79616265);
         SLSSpaceSetCompatID(g_connection, sid, 0x0);
     }
+}
+
+static bool space_manager_wait_for_window_on_space(uint64_t sid, struct window *window)
+{
+    uint64_t deadline = read_os_timer() + read_os_freq();
+    do {
+        if (space_manager_is_window_on_space(sid, window)) return true;
+        if (read_os_timer() >= deadline) break;
+        usleep(10000);
+    } while (read_os_timer() < deadline);
+
+    debug("window move timed out: window %u requested space %llu\n", window->id, sid);
+    return false;
 }
 
 static inline uint64_t space_manager_find_first_user_space_for_display(uint32_t did)
@@ -922,65 +943,6 @@ enum space_op_error space_manager_move_space_to_display(struct space_manager *sm
     return SPACE_OP_ERROR_SCRIPTING_ADDITION;
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-bool space_manager_focus_space_using_gesture(uint32_t new_did, uint64_t new_sid)
-{
-    int cur_index = space_manager_mission_control_index(display_space_id(new_did));
-    int new_index = space_manager_mission_control_index(new_sid);
-
-    int count = abs(new_index - cur_index);
-    if (count == 0) {
-        display_manager_focus_display(new_did, new_sid);
-        return true;
-    }
-
-    CGPoint point = display_center(new_did);
-    uint32_t cur_did = display_manager_cursor_display_id();
-
-    bool focus_display = cur_did != new_did;
-    if (focus_display) CGWarpMouseCursorPosition(point);
-
-    //
-    // NOTE(asmvik): MacOS does not have an API that allows for space activation.
-    // However, we can synthesize a sequence of high velocity gestures to skip the
-    // animation instead.
-    //
-    // :Attribution
-    // https://github.com/jurplel/InstantSpaceSwitcher
-    // https://github.com/thenickdude/wacom-driver-fix/blob/bdfda9a788934c88d09d31ea6a42664b9ba1471e/Readme.md
-    // Technique first observed in practice, and reverse-engineered from, BetterTouchTool.
-    //
-
-    CGEventRef event_dock_control = CGEventCreate(NULL);
-    if (!event_dock_control) return false;
-
-    float sign = (new_index - cur_index) > 0 ? 1.0 : -1.0;
-    CGEventSetIntegerValueField(event_dock_control, /* kCGSEventTypeField            */  55, /* kCGSEventDockControl       */ 30);
-    CGEventSetIntegerValueField(event_dock_control, /* kCGEventGestureHIDType        */ 110, /* kIOHIDEventTypeDockSwipe   */ 23);
-    CGEventSetIntegerValueField(event_dock_control, /* kCGEventGestureSwipeMotion    */ 123, /* kCGGestureMotionHorizontal */  1);
-    CGEventSetDoubleValueField(event_dock_control,  /* kCGEventGestureSwipeProgress  */ 124, sign);
-    CGEventSetDoubleValueField(event_dock_control,  /* kCGEventGestureSwipeVelocityX */ 129, sign * 9999.0);
-
-    for (int i = 0; i < count; ++i) {
-        CGEventSetIntegerValueField(event_dock_control, /* kCGEventGesturePhase */ 132, /* kCGSGesturePhaseBegan */ 1);
-        CGEventPost(kCGSessionEventTap, event_dock_control);
-        CGEventSetIntegerValueField(event_dock_control, /* kCGEventGesturePhase */ 132, /* kCGSGesturePhaseEnded */ 4);
-        CGEventPost(kCGSessionEventTap, event_dock_control);
-    }
-    CFRelease(event_dock_control);
-
-    if (focus_display) {
-        display_manager_set_active_display_id(new_did);
-        if (space_manager_active_space() != new_sid) {
-            CGPostMouseEvent(point, false, 1, true);
-            CGPostMouseEvent(point, false, 1, false);
-        }
-    }
-
-    return true;
-}
-#pragma clang diagnostic pop
 
 enum space_op_error space_manager_focus_space(uint64_t sid)
 {
@@ -1002,7 +964,7 @@ enum space_op_error space_manager_focus_space(uint64_t sid)
             display_manager_focus_display(new_did, sid);
         }
     } else {
-        space_manager_focus_space_using_gesture(new_did, sid);
+        if (!space_manager_focus_space_using_gesture(new_did, sid)) return SPACE_OP_ERROR_FOCUS_FAILED;
     }
 
     return SPACE_OP_ERROR_SUCCESS;

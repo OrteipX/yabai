@@ -51,6 +51,7 @@
 #include "misc/log.h"
 #include "misc/helpers.h"
 #include "misc/timer.h"
+#include "misc/space_gesture.h"
 #include "misc/macho_dlsym.h"
 #include "misc/sbuffer.h"
 #define HASHTABLE_IMPLEMENTATION
@@ -92,6 +93,7 @@
 #include "application.c"
 #include "display_manager.c"
 #include "space_manager.c"
+#include "space_transition.c"
 #include "window_manager.c"
 #include "mouse_handler.c"
 #include "yabai.c"

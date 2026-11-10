@@ -2089,12 +2089,12 @@ bool window_manager_close_window(struct window *window)
     return true;
 }
 
-void window_manager_send_window_to_space(struct space_manager *sm, struct window_manager *wm, struct window *window, uint64_t dst_sid, bool moved_by_rule)
+bool window_manager_send_window_to_space(struct space_manager *sm, struct window_manager *wm, struct window *window, uint64_t dst_sid, bool moved_by_rule)
 {
     TIME_FUNCTION;
 
     uint64_t src_sid = window_space(window->id);
-    if (src_sid == dst_sid) return;
+    if (src_sid == dst_sid) return true;
 
     if ((space_is_visible(src_sid) && (moved_by_rule || wm->focused_window_id == window->id))) {
         struct window *next = window_manager_find_window_on_space_by_rank_filtering_window(wm, src_sid, 1, window->id);
@@ -2105,6 +2105,12 @@ void window_manager_send_window_to_space(struct space_manager *sm, struct window
         }
     }
 
+    bool confirm_move = workspace_is_macos_goldengate();
+    if (confirm_move) {
+        space_manager_move_window_to_space(dst_sid, window);
+        if (!space_manager_wait_for_window_on_space(dst_sid, window)) return false;
+    }
+
     struct view *view = window_manager_find_managed_window(wm, window);
     if (view) {
         space_manager_untile_window(view, window);
@@ -2112,13 +2118,15 @@ void window_manager_send_window_to_space(struct space_manager *sm, struct window
         window_manager_purify_window(wm, window);
     }
 
-    space_manager_move_window_to_space(dst_sid, window);
+    if (!confirm_move) space_manager_move_window_to_space(dst_sid, window);
     SLSSpaceSetFrontPSN(g_connection, dst_sid, window->application->psn);
 
     if (window_manager_should_manage_window(window)) {
         struct view *view = space_manager_tile_window_on_space(sm, window, dst_sid);
         window_manager_add_managed_window(wm, window, view);
     }
+
+    return true;
 }
 
 enum window_op_error window_manager_apply_grid(struct space_manager *sm, struct window_manager *wm, struct window *window, unsigned r, unsigned c, unsigned x, unsigned y, unsigned w, unsigned h)
@@ -2264,7 +2272,7 @@ void window_manager_wait_for_native_fullscreen_transition(struct window *window)
         workspace_is_macos_ventura() ||
         workspace_is_macos_sonoma() ||
         workspace_is_macos_sequoia() ||
-        workspace_is_macos_tahoe()) {
+        workspace_is_macos_tahoe() || workspace_is_macos_goldengate()) {
         while (!space_is_user(space_manager_active_space())) {
 
             //

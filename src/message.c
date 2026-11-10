@@ -1787,6 +1787,8 @@ static void handle_domain_space(FILE *rsp, struct token domain, char *message)
                     daemon_fail(rsp, "cannot focus space because the display is in the middle of an animation.\n");
                 } else if (result == SPACE_OP_ERROR_IN_MISSION_CONTROL) {
                     daemon_fail(rsp, "cannot focus space because mission-control is active.\n");
+                } else if (result == SPACE_OP_ERROR_FOCUS_FAILED) {
+                    daemon_fail(rsp, "could not focus space: gesture failed or target space did not become current.\n");
                 } else if (result == SPACE_OP_ERROR_SCRIPTING_ADDITION) {
                     daemon_fail(rsp, "cannot focus space due to an error with the scripting-addition.\n");
                 }
@@ -2144,7 +2146,9 @@ static void handle_domain_window(FILE *rsp, struct token domain, char *message)
                 if (space_is_fullscreen(sid)) {
                     daemon_fail(rsp, "can not move window to a macOS fullscreen space!\n");
                 } else {
-                    window_manager_send_window_to_space(&g_space_manager, &g_window_manager, acting_window, sid, false);
+                    if (!window_manager_send_window_to_space(&g_space_manager, &g_window_manager, acting_window, sid, false)) {
+                        daemon_fail(rsp, "could not move window to the requested display.\n");
+                    }
                 }
             }
         } else if (token_equals(command, COMMAND_WINDOW_SPACE)) {
@@ -2153,7 +2157,9 @@ static void handle_domain_window(FILE *rsp, struct token domain, char *message)
                 if (space_is_fullscreen(selector.sid)) {
                     daemon_fail(rsp, "can not move window to a macOS fullscreen space!\n");
                 } else {
-                    window_manager_send_window_to_space(&g_space_manager, &g_window_manager, acting_window, selector.sid, false);
+                    if (!window_manager_send_window_to_space(&g_space_manager, &g_window_manager, acting_window, selector.sid, false)) {
+                        daemon_fail(rsp, "could not move window to the requested space.\n");
+                    }
                 }
             }
         } else if (token_equals(command, COMMAND_WINDOW_SWAP)) {
